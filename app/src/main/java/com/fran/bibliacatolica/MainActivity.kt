@@ -320,7 +320,7 @@ fun ReaderScreen(
     val verses = if (chapter in 1..book.chapters.size) book.chapters[chapter - 1] else emptyList()
     val chapterKey = "$bookId:$chapter"
     val isRead = chapterKey in read
-    val chapterSource = book.chapterSources.getOrNull(chapter - 1) ?: book.source
+    val chapterSource = book.chapterSources.getOrNull(chapter - 1) ?: book.info.source
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(
