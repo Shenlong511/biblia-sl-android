@@ -1,0 +1,98 @@
+package com.fran.bibliacatolica
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import org.json.JSONObject
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "biblia_catolica")
+
+/**
+ * Favoritos, notas, capítulos leídos, última lectura y ajustes.
+ * Todo se guarda en el teléfono con DataStore (sin internet, sin cuenta).
+ * Claves:
+ *  - favorito: "GEN:1:1"
+ *  - nota: "GEN:1:1" -> texto de la nota
+ *  - capítulo leído: "GEN:1"
+ *  - última lectura: "GEN:1"
+ */
+class UserData(private val context: Context) {
+    private val favoritesKey = stringSetPreferencesKey("favorites")
+    private val notesKey = stringPreferencesKey("notes_json")
+    private val readKey = stringSetPreferencesKey("read_chapters")
+    private val lastReadKey = stringPreferencesKey("last_read")
+    private val fontKey = floatPreferencesKey("font_scale")
+    private val darkKey = booleanPreferencesKey("dark_mode")
+
+    val favoritesFlow: Flow<Set<String>> =
+        context.dataStore.data.map { it[favoritesKey] ?: emptySet() }
+    val readFlow: Flow<Set<String>> =
+        context.dataStore.data.map { it[readKey] ?: emptySet() }
+    val lastReadFlow: Flow<String?> =
+        context.dataStore.data.map { it[lastReadKey] }
+    val fontFlow: Flow<Float> =
+        context.dataStore.data.map { it[fontKey] ?: 1.0f }
+    val darkFlow: Flow<Boolean> =
+        context.dataStore.data.map { it[darkKey] ?: false }
+    val notesFlow: Flow<Map<String, String>> =
+        context.dataStore.data.map { prefs ->
+            val raw = prefs[notesKey] ?: return@map emptyMap<String, String>()
+            try {
+                val obj = JSONObject(raw)
+                val out = mutableMapOf<String, String>()
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    out[k] = obj.getString(k)
+                }
+                out
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        }
+
+    suspend fun toggleFavorite(ref: String) {
+        context.dataStore.edit { prefs ->
+            val cur = (prefs[favoritesKey] ?: emptySet()).toMutableSet()
+            if (cur.contains(ref)) cur.remove(ref) else cur.add(ref)
+            prefs[favoritesKey] = cur
+        }
+    }
+
+    suspend fun saveNote(ref: String, text: String) {
+        val current = notesFlow.first().toMutableMap()
+        if (text.isBlank()) current.remove(ref) else current[ref] = text
+        val obj = JSONObject()
+        current.forEach { (k, v) -> obj.put(k, v) }
+        context.dataStore.edit { it[notesKey] = obj.toString() }
+    }
+
+    suspend fun toggleRead(chapterKey: String) {
+        context.dataStore.edit { prefs ->
+            val cur = (prefs[readKey] ?: emptySet()).toMutableSet()
+            if (cur.contains(chapterKey)) cur.remove(chapterKey) else cur.add(chapterKey)
+            prefs[readKey] = cur
+        }
+    }
+
+    suspend fun setLastRead(chapterKey: String) {
+        context.dataStore.edit { it[lastReadKey] = chapterKey }
+    }
+
+    suspend fun setFontScale(scale: Float) {
+        context.dataStore.edit { it[fontKey] = scale.coerceIn(0.8f, 1.6f) }
+    }
+
+    suspend fun setDarkMode(dark: Boolean) {
+        context.dataStore.edit { it[darkKey] = dark }
+    }
+}

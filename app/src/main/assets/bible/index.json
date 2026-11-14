@@ -1,0 +1,588 @@
+{
+ "books": [
+  {
+   "id": "GEN",
+   "name": "Génesis",
+   "testament": "AT",
+   "chapters": 50,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "EXO",
+   "name": "Éxodo",
+   "testament": "AT",
+   "chapters": 40,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "LEV",
+   "name": "Levítico",
+   "testament": "AT",
+   "chapters": 27,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "NUM",
+   "name": "Números",
+   "testament": "AT",
+   "chapters": 36,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "DEU",
+   "name": "Deuteronomio",
+   "testament": "AT",
+   "chapters": 34,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JOS",
+   "name": "Josué",
+   "testament": "AT",
+   "chapters": 24,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JDG",
+   "name": "Jueces",
+   "testament": "AT",
+   "chapters": 21,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "RUT",
+   "name": "Rut",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1SA",
+   "name": "1 Samuel",
+   "testament": "AT",
+   "chapters": 31,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2SA",
+   "name": "2 Samuel",
+   "testament": "AT",
+   "chapters": 24,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1KI",
+   "name": "1 Reyes",
+   "testament": "AT",
+   "chapters": 22,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2KI",
+   "name": "2 Reyes",
+   "testament": "AT",
+   "chapters": 25,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1CH",
+   "name": "1 Crónicas",
+   "testament": "AT",
+   "chapters": 29,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2CH",
+   "name": "2 Crónicas",
+   "testament": "AT",
+   "chapters": 36,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "EZR",
+   "name": "Esdras",
+   "testament": "AT",
+   "chapters": 10,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "NEH",
+   "name": "Nehemías",
+   "testament": "AT",
+   "chapters": 13,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "TOB",
+   "name": "Tobías",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "JDT",
+   "name": "Judit",
+   "testament": "AT",
+   "chapters": 16,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "EST",
+   "name": "Ester",
+   "testament": "AT",
+   "chapters": 10,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1MA",
+   "name": "1 Macabeos",
+   "testament": "AT",
+   "chapters": 16,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "2MA",
+   "name": "2 Macabeos",
+   "testament": "AT",
+   "chapters": 15,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "JOB",
+   "name": "Job",
+   "testament": "AT",
+   "chapters": 42,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "PSA",
+   "name": "Salmos",
+   "testament": "AT",
+   "chapters": 150,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "PRO",
+   "name": "Proverbios",
+   "testament": "AT",
+   "chapters": 31,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "ECC",
+   "name": "Eclesiastés",
+   "testament": "AT",
+   "chapters": 12,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "SNG",
+   "name": "Cantar de los Cantares",
+   "testament": "AT",
+   "chapters": 8,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "WIS",
+   "name": "Sabiduría",
+   "testament": "AT",
+   "chapters": 19,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "SIR",
+   "name": "Eclesiástico",
+   "testament": "AT",
+   "chapters": 51,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "ISA",
+   "name": "Isaías",
+   "testament": "AT",
+   "chapters": 66,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JER",
+   "name": "Jeremías",
+   "testament": "AT",
+   "chapters": 52,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "LAM",
+   "name": "Lamentaciones",
+   "testament": "AT",
+   "chapters": 5,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "BAR",
+   "name": "Baruc",
+   "testament": "AT",
+   "chapters": 6,
+   "source": "spablm",
+   "sourceLabel": "Santa Biblia libre para el mundo (dominio público)"
+  },
+  {
+   "id": "EZK",
+   "name": "Ezequiel",
+   "testament": "AT",
+   "chapters": 48,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "DAN",
+   "name": "Daniel",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "vbl+spablm",
+   "sourceLabel": "Versión Biblia Libre (caps. 1–12) + Santa Biblia libre para el mundo (caps. 13–14, Susana y Bel)"
+  },
+  {
+   "id": "HOS",
+   "name": "Oseas",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JOL",
+   "name": "Joel",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "AMO",
+   "name": "Amós",
+   "testament": "AT",
+   "chapters": 9,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "OBA",
+   "name": "Abdías",
+   "testament": "AT",
+   "chapters": 1,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JON",
+   "name": "Jonás",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "MIC",
+   "name": "Miqueas",
+   "testament": "AT",
+   "chapters": 7,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "NAM",
+   "name": "Nahúm",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "HAB",
+   "name": "Habacuc",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "ZEP",
+   "name": "Sofonías",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "HAG",
+   "name": "Ageo",
+   "testament": "AT",
+   "chapters": 2,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "ZEC",
+   "name": "Zacarías",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "MAL",
+   "name": "Malaquías",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "MAT",
+   "name": "Mateo",
+   "testament": "NT",
+   "chapters": 28,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "MRK",
+   "name": "Marcos",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "LUK",
+   "name": "Lucas",
+   "testament": "NT",
+   "chapters": 24,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JHN",
+   "name": "Juan",
+   "testament": "NT",
+   "chapters": 21,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "ACT",
+   "name": "Hechos",
+   "testament": "NT",
+   "chapters": 28,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "ROM",
+   "name": "Romanos",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1CO",
+   "name": "1 Corintios",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2CO",
+   "name": "2 Corintios",
+   "testament": "NT",
+   "chapters": 13,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "GAL",
+   "name": "Gálatas",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "EPH",
+   "name": "Efesios",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "PHP",
+   "name": "Filipenses",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "COL",
+   "name": "Colosenses",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1TH",
+   "name": "1 Tesalonicenses",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2TH",
+   "name": "2 Tesalonicenses",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1TI",
+   "name": "1 Timoteo",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2TI",
+   "name": "2 Timoteo",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "TIT",
+   "name": "Tito",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "PHM",
+   "name": "Filemón",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "HEB",
+   "name": "Hebreos",
+   "testament": "NT",
+   "chapters": 13,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JAS",
+   "name": "Santiago",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1PE",
+   "name": "1 Pedro",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2PE",
+   "name": "2 Pedro",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "1JN",
+   "name": "1 Juan",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "2JN",
+   "name": "2 Juan",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "3JN",
+   "name": "3 Juan",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "JUD",
+   "name": "Judas",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  },
+  {
+   "id": "REV",
+   "name": "Apocalipsis",
+   "testament": "NT",
+   "chapters": 22,
+   "source": "vbl",
+   "sourceLabel": "Versión Biblia Libre"
+  }
+ ]
+}
