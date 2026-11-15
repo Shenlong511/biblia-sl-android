@@ -9,17 +9,25 @@ favoritos o notas.
 ## Qué contiene
 
 - **Traducción principal:** Versión Biblia Libre (VBL), en español moderno.
+- **Segunda traducción:** Reina-Valera 1909 (RV1909), en español clásico,
+  también guardada dentro de la app. Se cambia en **Ajustes** o en el
+  lector (dos botones arriba de Anterior / Marcar leído / Siguiente).
+  La elección se guarda en el teléfono y se aplica al lector, al
+  versículo del día, a la búsqueda y a los guardados. La VBL sigue
+  siendo la traducción por defecto.
 - **Los 7 libros deuterocanónicos** (Tobías, Judit, Sabiduría,
   Eclesiástico, Baruc, 1 Macabeos y 2 Macabeos) se muestran con la
-  **Santa Biblia libre para el mundo**, de dominio público, porque la
-  VBL no los incluye. En la app van marcados claramente.
+  **Santa Biblia libre para el mundo**, de dominio público, porque
+  ni la VBL ni la Reina-Valera 1909 los incluyen. En la app van marcados claramente.
+  Con la Reina-Valera activa, esos libros y Daniel 13–14 siguen
+  mostrando la Santa Biblia libre, sin romperse ni quedar vacíos.
 - **Daniel 13–14** (Susana y Bel) también vienen de la Santa Biblia
   libre para el mundo, por la misma razón.
 - Pantallas: Inicio con versículo del día, Antiguo Testamento,
   Nuevo Testamento, lista de capítulos, lector con versículos
   numerados, búsqueda offline, Favoritos, Notas por versículo,
   capítulos marcados como leídos y “Continuar leyendo”.
-- Ajustes de tamaño de letra y modo oscuro.
+- Ajustes de traducción, tamaño de letra y modo oscuro.
 - Favoritos, notas y progreso se guardan solo en tu teléfono.
 
 ## Cómo compilarla en GitHub (recomendado, sin instalar nada)
@@ -98,6 +106,8 @@ libro (ver `VERIFICATION.md`).
 - Lenguaje: Kotlin con Jetpack Compose
 - minSdk 24 (Android 7.0 o superior), targetSdk 34
 - Sin permiso de internet en la app: todo el texto vive en
-  `app/src/main/assets/bible/` como archivos JSON, un archivo
-  por libro, que la app lee bajo demanda.
+  `app/src/main/assets/bible/` (VBL + Santa Biblia libre) y en
+  `app/src/main/assets/bible_rv1909/` (Reina-Valera 1909), como archivos
+  JSON, un archivo por libro, que la app lee bajo demanda.
+  Total de datos locales: 8,9 MB (4,8 MB VBL + 4,1 MB RV1909).
 - Favoritos, notas y progreso: DataStore, solo en el teléfono.

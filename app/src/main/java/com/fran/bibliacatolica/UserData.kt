@@ -32,6 +32,12 @@ class UserData(private val context: Context) {
     private val lastReadKey = stringPreferencesKey("last_read")
     private val fontKey = floatPreferencesKey("font_scale")
     private val darkKey = booleanPreferencesKey("dark_mode")
+    private val translationKey = stringPreferencesKey("translation")
+
+    /** Traducción activa: "vbl" (Versión Biblia Libre, por defecto) o
+     *  "rv1909" (Reina-Valera 1909). Se guarda en el teléfono. */
+    val translationFlow: Flow<String> =
+        context.dataStore.data.map { it[translationKey] ?: "vbl" }
 
     val favoritesFlow: Flow<Set<String>> =
         context.dataStore.data.map { it[favoritesKey] ?: emptySet() }
@@ -94,5 +100,10 @@ class UserData(private val context: Context) {
 
     suspend fun setDarkMode(dark: Boolean) {
         context.dataStore.edit { it[darkKey] = dark }
+    }
+
+    suspend fun setTranslation(translation: String) {
+        val value = if (translation == "rv1909") "rv1909" else "vbl"
+        context.dataStore.edit { it[translationKey] = value }
     }
 }

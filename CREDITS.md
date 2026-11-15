@@ -15,6 +15,25 @@ tienen derechos de autor.
   de `https://bible-api.com/data/vbl/<LIBRO>/<CAPÍTULO>`).
 - Se usa para los 66 libros del canon común, y para Daniel 1–12.
 
+## Reina-Valera 1909 (RV1909) — 66 libros
+
+- **Texto:** Reina-Valera 1909.
+- **Licencia:** dominio público.
+- **Fuente de descarga:** https://ebible.org/Scriptures/spaRV1909_usfm.zip
+  (traducción identificada como `spaRV1909` en eBible.org;
+  https://ebible.org/details.php?id=spaRV1909).
+  Nota: bible-api.com lista la RV1909 pero su endpoint
+  `https://bible-api.com/data/rv1909` devolvía 404 al descargar, por
+  eso se usó el USFM de eBible.org.
+- Conversión al formato JSON de la app con `tools/convert_rv1909.py`
+  (reproducible: descarga el ZIP, descomprime los 66 USFM y ejecuta el
+  script). Se conservan la ortografía original de 1909 ("crió", "fué",
+  "á", "EN el principio…") y las palabras añadidas por los traductores
+  (`\add` en USFM); se quitaron solo los marcadores de Strong
+  (`\w …|strong="…" \w*`) y de formato.
+- Se usa como segunda traducción, a elegir en Ajustes o en el lector.
+  La VBL sigue siendo la traducción por defecto.
+
 ## Santa Biblia libre para el mundo — deuterocanónicos
 
 - **Texto:** Santa Biblia libre para el mundo.

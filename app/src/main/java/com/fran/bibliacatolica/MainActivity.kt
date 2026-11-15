@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,8 +64,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val dark by userData.darkFlow.collectAsState(initial = false)
             val fontScale by userData.fontFlow.collectAsState(initial = 1.0f)
+            val translation by userData.translationFlow.collectAsState(initial = "vbl")
             MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
-                BibliaApp(repo, userData, fontScale)
+                BibliaApp(repo, userData, fontScale, translation)
             }
         }
     }
@@ -74,7 +76,7 @@ private val DEUTEROCANONICAL = setOf("TOB", "JDT", "WIS", "SIR", "BAR", "1MA", "
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float) {
+fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, translation: String) {
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
     Scaffold(
@@ -94,7 +96,7 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float) {
             startDestination = "home",
             modifier = Modifier.padding(pad)
         ) {
-            composable("home") { HomeScreen(repo, userData, nav) }
+            composable("home") { HomeScreen(repo, userData, nav, translation) }
             composable(
                 "books/{testament}",
                 arguments = listOf(navArgument("testament") { type = NavType.StringType })
@@ -105,7 +107,7 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float) {
                 "chapters/{bookId}",
                 arguments = listOf(navArgument("bookId") { type = NavType.StringType })
             ) { back ->
-                ChapterListScreen(repo, userData, back.arguments?.getString("bookId") ?: "GEN", nav)
+                ChapterListScreen(repo, userData, back.arguments?.getString("bookId") ?: "GEN", nav, translation)
             }
             composable(
                 "reader/{bookId}/{chapter}",
@@ -121,19 +123,20 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float) {
                     chapter = back.arguments?.getInt("chapter") ?: 1,
                     nav = nav,
                     fontScale = fontScale,
-                    scope = scope
+                    scope = scope,
+                    translation = translation
                 )
             }
-            composable("search") { SearchScreen(repo, nav) }
-            composable("favorites") { FavoritesScreen(repo, userData, nav) }
-            composable("settings") { SettingsScreen(userData) }
+            composable("search") { SearchScreen(repo, nav, translation) }
+            composable("favorites") { FavoritesScreen(repo, userData, nav, translation) }
+            composable("settings") { SettingsScreen(userData, translation) }
         }
     }
 }
 
 @Composable
-fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController) {
-    val daily = remember { repo.dailyVerse() }
+fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String) {
+    val daily = remember(translation) { repo.dailyVerse(translation) }
     val lastRead by userData.lastReadFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
     LazyColumn(
@@ -155,6 +158,10 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
                         Text(daily.text, style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(8.dp))
                         Text(daily.label, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Traducción: ${BibleRepository.translationLabel(translation)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(onClick = {
                             nav.navigate("reader/${daily.bookId}/${daily.chapter}")
@@ -196,9 +203,11 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
         }
         item {
             Text(
-                "Traducción principal: Versión Biblia Libre, en español moderno. " +
-                    "Los 7 libros deuterocanónicos se muestran con la Santa Biblia libre " +
-                    "para el mundo, de dominio público, y van marcados en la lista.",
+                "Traducciones: Versión Biblia Libre, en español moderno, y " +
+                    "Reina-Valera 1909, en español clásico. Se cambia en Ajustes " +
+                    "o en el lector. Los 7 libros deuterocanónicos se muestran con " +
+                    "la Santa Biblia libre para el mundo, de dominio público, y van " +
+                    "marcados en la lista.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -219,7 +228,10 @@ fun BookListScreen(repo: BibleRepository, testament: String, nav: NavHostControl
         Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text("${books.size} libros · sin internet", style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             items(books) { book ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
@@ -255,7 +267,8 @@ fun ChapterListScreen(
     repo: BibleRepository,
     userData: UserData,
     bookId: String,
-    nav: NavHostController
+    nav: NavHostController,
+    translation: String
 ) {
     val info = repo.bookById(bookId)
     val read by userData.readFlow.collectAsState(initial = emptySet())
@@ -264,9 +277,19 @@ fun ChapterListScreen(
         Text("Libro no encontrado.", Modifier.padding(16.dp))
         return
     }
+    // Etiqueta de fuente según la traducción activa. Los deuterocanónicos
+    // y Daniel 13-14 siempre son Santa Biblia libre (spablm).
+    val sourceText = when {
+        info.id in DEUTEROCANONICAL -> info.sourceLabel
+        info.id == "DAN" && translation == "rv1909" ->
+            "Caps. 1–12: Reina-Valera 1909 · Caps. 13–14: Santa Biblia libre"
+        info.id == "DAN" -> info.sourceLabel
+        translation == "rv1909" -> "Reina-Valera 1909 (dominio público)"
+        else -> info.sourceLabel
+    }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(info.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(info.sourceLabel, style = MaterialTheme.typography.bodySmall)
+        Text(sourceText, style = MaterialTheme.typography.bodySmall)
         if (info.id in DEUTEROCANONICAL) {
             Text(
                 "Libro deuterocanónico. Texto: Santa Biblia libre para el mundo, de dominio público.",
@@ -276,6 +299,7 @@ fun ChapterListScreen(
         Spacer(Modifier.height(12.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(5),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -305,9 +329,10 @@ fun ReaderScreen(
     chapter: Int,
     nav: NavHostController,
     fontScale: Float,
-    scope: kotlinx.coroutines.CoroutineScope
+    scope: kotlinx.coroutines.CoroutineScope,
+    translation: String
 ) {
-    val book = remember(bookId) { repo.loadBook(bookId) }
+    val book = remember(bookId, translation) { repo.loadBook(bookId, translation) }
     val favorites by userData.favoritesFlow.collectAsState(initial = emptySet())
     val notes by userData.notesFlow.collectAsState(initial = emptyMap())
     val read by userData.readFlow.collectAsState(initial = emptySet())
@@ -329,28 +354,89 @@ fun ReaderScreen(
             fontWeight = FontWeight.Bold
         )
         Text(
-            if (chapterSource == "spablm") "Santa Biblia libre para el mundo (dominio público)"
-            else "Versión Biblia Libre",
+            when (chapterSource) {
+                "spablm" -> "Santa Biblia libre para el mundo (dominio público)"
+                "rv1909" -> "Reina-Valera 1909 (dominio público)"
+                else -> "Versión Biblia Libre"
+            },
             style = MaterialTheme.typography.bodySmall
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = { if (chapter > 1) nav.navigate("reader/$bookId/${chapter - 1}") },
-                enabled = chapter > 1
-            ) { Text("← Anterior") }
-            OutlinedButton(
-                onClick = { scope.launch { userData.toggleRead(chapterKey) } }
-            ) { Text(if (isRead) "✓ Leído" else "Marcar leído") }
-            OutlinedButton(
-                onClick = { if (chapter < book.chapters.size) nav.navigate("reader/$bookId/${chapter + 1}") },
-                enabled = chapter < book.chapters.size
-            ) { Text("Siguiente →") }
+        // Selector de traducción: la activa va rellena, la otra en contorno.
+        // Al cambiar, se cierra el panel del versículo para no mostrar
+        // texto de la traducción anterior.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (translation == "vbl") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+                ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 13.sp) }
+                OutlinedButton(
+                    onClick = {
+                        selected = null
+                        scope.launch { userData.setTranslation("rv1909") }
+                    },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+                ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 13.sp) }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        selected = null
+                        scope.launch { userData.setTranslation("vbl") }
+                    },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+                ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 13.sp) }
+                Button(
+                    onClick = { },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+                ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 13.sp) }
+            }
         }
         Spacer(Modifier.height(8.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Los 16 versículos que la VBL omite por no estar en los
-            // manuscritos más antiguos (p. ej. Mateo 17:21) vienen vacíos
-            // en la fuente; se saltan al mostrar, sin cambiar la numeración.
+        // Los 3 botones comparten el ancho a partes iguales: antes no
+        // cabían en la fila y el tercero ("Siguiente") se deformaba
+        // como un óvalo vertical vacío y muy alto.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { if (chapter > 1) nav.navigate("reader/$bookId/${chapter - 1}") },
+                enabled = chapter > 1,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+            ) { Text("← Anterior", maxLines = 1, fontSize = 13.sp) }
+            OutlinedButton(
+                onClick = { scope.launch { userData.toggleRead(chapterKey) } },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+            ) { Text(if (isRead) "✓ Leído" else "Marcar leído", maxLines = 1, fontSize = 13.sp) }
+            OutlinedButton(
+                onClick = { if (chapter < book.chapters.size) nav.navigate("reader/$bookId/${chapter + 1}") },
+                enabled = chapter < book.chapters.size,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+            ) { Text("Siguiente →", maxLines = 1, fontSize = 13.sp) }
+        }
+        Spacer(Modifier.height(8.dp))
+        // La lista ocupa toda la altura que queda: antes, sin weight(1f),
+        // el texto solo se veía en la mitad de la pantalla al subirlo.
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Los versículos que vienen vacíos en la fuente se saltan al
+            // mostrar, sin cambiar la numeración: los 16 que la VBL omite
+            // por no estar en los manuscritos más antiguos (p. ej. Mateo
+            // 17:21), y 18 huecos de numeración de la RV1909 (p. ej. la
+            // bendición de 2 Corintios 13:14 va en 13:13 en esa edición;
+            // el texto no se pierde, está en el versículo siguiente).
             val visible = verses.indices.filter { verses[it].isNotBlank() }
             items(visible.size) { idx ->
                 val i = visible[idx]
@@ -429,7 +515,7 @@ fun ReaderScreen(
 }
 
 @Composable
-fun SearchScreen(repo: BibleRepository, nav: NavHostController) {
+fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: String) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<VerseRef>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
@@ -437,7 +523,8 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Buscar", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
-            "Escribe una cita (\"Juan 3\", \"Génesis 1:1\") o una palabra. La búsqueda es offline.",
+            "Escribe una cita (\"Juan 3\", \"Génesis 1:1\") o una palabra. La búsqueda es offline, " +
+                "en ${BibleRepository.translationLabel(translation)}.",
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(Modifier.height(8.dp))
@@ -451,14 +538,17 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController) {
         Button(onClick = {
             searching = true
             scope.launch {
-                val res = withContext(Dispatchers.Default) { repo.search(query) }
+                val res = withContext(Dispatchers.Default) { repo.search(query, translation) }
                 results = res
                 searching = false
             }
         }) { Text(if (searching) "Buscando…" else "Buscar") }
         Spacer(Modifier.height(8.dp))
         if (results.size >= 100) Text("Mostrando los primeros 100 resultados.")
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             items(results) { ref ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
@@ -476,21 +566,24 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController) {
 }
 
 @Composable
-fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostController) {
+fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String) {
     val favorites by userData.favoritesFlow.collectAsState(initial = emptySet())
     val notes by userData.notesFlow.collectAsState(initial = emptyMap())
-    val favRefs = remember(favorites) {
+    val favRefs = remember(favorites, translation) {
         favorites.mapNotNull { key ->
             val parts = key.split(":")
             if (parts.size != 3) null
-            else repo.getVerse(parts[0], parts[1].toIntOrNull() ?: return@mapNotNull null, parts[2].toIntOrNull() ?: return@mapNotNull null)
+            else repo.getVerse(parts[0], parts[1].toIntOrNull() ?: return@mapNotNull null, parts[2].toIntOrNull() ?: return@mapNotNull null, translation)
         }
     }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Guardados", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Favoritos (${favRefs.size}) · Notas (${notes.size}) · todo guardado en tu teléfono.")
+        Text("Favoritos (${favRefs.size}) · Notas (${notes.size}) · ${BibleRepository.translationLabel(translation)} · todo guardado en tu teléfono.")
         Spacer(Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             items(favRefs) { ref ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
@@ -506,7 +599,7 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
             }
             items(notes.entries.filter { it.key !in favorites }.toList()) { (key, note) ->
                 val parts = key.split(":")
-                val ref = if (parts.size == 3) repo.getVerse(parts[0], parts[1].toIntOrNull() ?: 0, parts[2].toIntOrNull() ?: 0) else null
+                val ref = if (parts.size == 3) repo.getVerse(parts[0], parts[1].toIntOrNull() ?: 0, parts[2].toIntOrNull() ?: 0, translation) else null
                 if (ref != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable {
@@ -526,32 +619,94 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
 }
 
 @Composable
-fun SettingsScreen(userData: UserData) {
+fun SettingsScreen(userData: UserData, translation: String) {
     val fontScale by userData.fontFlow.collectAsState(initial = 1.0f)
     val dark by userData.darkFlow.collectAsState(initial = false)
     val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Ajustes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Tamaño de letra")
-        Slider(
-            value = fontScale,
-            onValueChange = { scope.launch { userData.setFontScale(it) } },
-            valueRange = 0.8f..1.6f,
-            steps = 7
-        )
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("Modo oscuro", modifier = Modifier.weight(1f))
-            Switch(checked = dark, onCheckedChange = { scope.launch { userData.setDarkMode(it) } })
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text("Ajustes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }
-        Text("Fuentes del texto", fontWeight = FontWeight.Bold)
-        Text(
-            "• Versión Biblia Libre (CC BY-SA 4.0, © 2018–2020 Jonathan Gallagher y Shelly Barrios de Avila): " +
-                "66 libros.\n" +
-                "• Santa Biblia libre para el mundo (dominio público, eBible.org): " +
-                "Tobías, Judit, Sabiduría, Eclesiástico, Baruc, 1 y 2 Macabeos, y Daniel 13–14 (Susana y Bel).\n" +
-                "• Esta app no usa internet. Todo el texto está dentro de la app.",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Text("Biblia SL · versión 1.0 · 73 libros", style = MaterialTheme.typography.bodySmall)
+        item {
+            Text("Traducción", fontWeight = FontWeight.Bold)
+        }
+        item {
+            Text(
+                "Activa: ${BibleRepository.translationLabel(translation)}. Se aplica " +
+                    "al lector, al versículo del día, a la búsqueda y a los guardados.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        item {
+            if (translation == "vbl") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("✓ Versión Biblia Libre (español moderno)") }
+            } else {
+                OutlinedButton(
+                    onClick = { scope.launch { userData.setTranslation("vbl") } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Versión Biblia Libre (español moderno)") }
+            }
+        }
+        item {
+            if (translation == "rv1909") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("✓ Reina-Valera 1909 (español clásico)") }
+            } else {
+                OutlinedButton(
+                    onClick = { scope.launch { userData.setTranslation("rv1909") } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Reina-Valera 1909 (español clásico)") }
+            }
+        }
+        item {
+            Text(
+                "La Reina-Valera 1909 solo tiene 66 libros. Los 7 libros " +
+                    "deuterocanónicos (Tobías, Judit, Sabiduría, Eclesiástico, " +
+                    "Baruc, 1 y 2 Macabeos) y Daniel 13–14 se siguen mostrando " +
+                    "con la Santa Biblia libre para el mundo, y van etiquetados.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        item {
+            Text("Tamaño de letra")
+            Slider(
+                value = fontScale,
+                onValueChange = { scope.launch { userData.setFontScale(it) } },
+                valueRange = 0.8f..1.6f,
+                steps = 7
+            )
+        }
+        item {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text("Modo oscuro", modifier = Modifier.weight(1f))
+                Switch(checked = dark, onCheckedChange = { scope.launch { userData.setDarkMode(it) } })
+            }
+        }
+        item {
+            Text("Fuentes del texto", fontWeight = FontWeight.Bold)
+        }
+        item {
+            Text(
+                "• Versión Biblia Libre (CC BY-SA 4.0, © 2018–2020 Jonathan Gallagher y Shelly Barrios de Avila): " +
+                    "66 libros.\n" +
+                    "• Reina-Valera 1909 (dominio público, eBible.org): 66 libros, " +
+                    "en español clásico con la ortografía original de 1909.\n" +
+                    "• Santa Biblia libre para el mundo (dominio público, eBible.org): " +
+                    "Tobías, Judit, Sabiduría, Eclesiástico, Baruc, 1 y 2 Macabeos, y Daniel 13–14 (Susana y Bel).\n" +
+                    "• Esta app no usa internet. Todo el texto está dentro de la app.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        item {
+            Text("Biblia SL · versión 1.1 · 73 libros", style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
