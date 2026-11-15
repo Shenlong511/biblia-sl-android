@@ -347,123 +347,127 @@ fun ReaderScreen(
     val isRead = chapterKey in read
     val chapterSource = book.chapterSources.getOrNull(chapter - 1) ?: book.info.source
     Box(Modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            "${book.info.name} $chapter",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            when (chapterSource) {
-                "spablm" -> "Santa Biblia libre para el mundo (dominio público)"
-                "rv1909" -> "Reina-Valera 1909 (dominio público)"
-                else -> "Versión Biblia Libre"
-            },
-            style = MaterialTheme.typography.bodySmall
-        )
-        // Selector de traducción: la activa va rellena, la otra en contorno.
-        // Al cambiar, se cierra el panel del versículo para no mostrar
-        // texto de la traducción anterior.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (translation == "vbl") {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-                ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 13.sp) }
-                OutlinedButton(
-                    onClick = {
-                        selected = null
-                        scope.launch { userData.setTranslation("rv1909") }
-                    },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-                ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 13.sp) }
-            } else {
-                OutlinedButton(
-                    onClick = {
-                        selected = null
-                        scope.launch { userData.setTranslation("vbl") }
-                    },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-                ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 13.sp) }
-                Button(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-                ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 13.sp) }
+    // El encabezado (titulo, selector y botones) va DENTRO de la lista:
+    // al bajar el texto se esconde y el capitulo ocupa toda la pantalla;
+    // al subir hasta arriba vuelve a aparecer. En horizontal era lo que
+    // dejaba apenas un versiculo visible.
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        item {
+            Text(
+                "${book.info.name} $chapter",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        item {
+            Text(
+                when (chapterSource) {
+                    "spablm" -> "Santa Biblia libre para el mundo (dominio público)"
+                    "rv1909" -> "Reina-Valera 1909 (dominio público)"
+                    else -> "Versión Biblia Libre"
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        item {
+            // Selector de traducción: la activa va rellena, la otra en contorno.
+            // Al cambiar, se cierra el panel del versículo para no mostrar
+            // texto de la traducción anterior.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (translation == "vbl") {
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 12.sp) }
+                    OutlinedButton(
+                        onClick = {
+                            selected = null
+                            scope.launch { userData.setTranslation("rv1909") }
+                        },
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 12.sp) }
+                } else {
+                    OutlinedButton(
+                        onClick = {
+                            selected = null
+                            scope.launch { userData.setTranslation("vbl") }
+                        },
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 12.sp) }
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 12.sp) }
+                }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        // Los 3 botones comparten el ancho a partes iguales: antes no
-        // cabían en la fila y el tercero ("Siguiente") se deformaba
-        // como un óvalo vertical vacío y muy alto.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = { if (chapter > 1) nav.navigate("reader/$bookId/${chapter - 1}") },
-                enabled = chapter > 1,
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-            ) { Text("← Anterior", maxLines = 1, fontSize = 13.sp) }
-            OutlinedButton(
-                onClick = { scope.launch { userData.toggleRead(chapterKey) } },
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-            ) { Text(if (isRead) "✓ Leído" else "Marcar leído", maxLines = 1, fontSize = 13.sp) }
-            OutlinedButton(
-                onClick = { if (chapter < book.chapters.size) nav.navigate("reader/$bookId/${chapter + 1}") },
-                enabled = chapter < book.chapters.size,
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-            ) { Text("Siguiente →", maxLines = 1, fontSize = 13.sp) }
+        item {
+            // Los 3 botones comparten el ancho a partes iguales.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { if (chapter > 1) nav.navigate("reader/$bookId/${chapter - 1}") },
+                    enabled = chapter > 1,
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                ) { Text("← Anterior", maxLines = 1, fontSize = 12.sp) }
+                OutlinedButton(
+                    onClick = { scope.launch { userData.toggleRead(chapterKey) } },
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                ) { Text(if (isRead) "✓ Leído" else "Marcar leído", maxLines = 1, fontSize = 12.sp) }
+                OutlinedButton(
+                    onClick = { if (chapter < book.chapters.size) nav.navigate("reader/$bookId/${chapter + 1}") },
+                    enabled = chapter < book.chapters.size,
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                ) { Text("Siguiente →", maxLines = 1, fontSize = 12.sp) }
+            }
         }
-        Spacer(Modifier.height(8.dp))
-        // La lista ocupa toda la altura que queda: antes, sin weight(1f),
-        // el texto solo se veía en la mitad de la pantalla al subirlo.
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Los versículos que vienen vacíos en la fuente se saltan al
-            // mostrar, sin cambiar la numeración: los 16 que la VBL omite
-            // por no estar en los manuscritos más antiguos (p. ej. Mateo
-            // 17:21), y 18 huecos de numeración de la RV1909 (p. ej. la
-            // bendición de 2 Corintios 13:14 va en 13:13 en esa edición;
-            // el texto no se pierde, está en el versículo siguiente).
-            val visible = verses.indices.filter { verses[it].isNotBlank() }
-            items(visible.size) { idx ->
-                val i = visible[idx]
-                val ref = VerseRef(bookId, book.info.name, chapter, i + 1, verses[i])
-                val isFav = ref.key in favorites
-                val hasNote = notes.containsKey(ref.key)
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        selected = ref
-                        noteDraft = notes[ref.key] ?: ""
-                    }
-                ) {
-                    Column(Modifier.padding(12.dp)) {
+        // Los versículos que vienen vacíos en la fuente se saltan al
+        // mostrar, sin cambiar la numeración: los 16 que la VBL omite
+        // por no estar en los manuscritos más antiguos (p. ej. Mateo
+        // 17:21), y 18 huecos de numeración de la RV1909 (p. ej. la
+        // bendición de 2 Corintios 13:14 va en 13:13 en esa edición;
+        // el texto no se pierde, está en el versículo siguiente).
+        val visible = verses.indices.filter { verses[it].isNotBlank() }
+        items(visible.size) { idx ->
+            val i = visible[idx]
+            val ref = VerseRef(bookId, book.info.name, chapter, i + 1, verses[i])
+            val isFav = ref.key in favorites
+            val hasNote = notes.containsKey(ref.key)
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable {
+                    selected = ref
+                    noteDraft = notes[ref.key] ?: ""
+                }
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(
+                        "${i + 1}  ${verses[i]}",
+                        fontSize = (16 * fontScale).sp,
+                        lineHeight = (24 * fontScale).sp
+                    )
+                    if (isFav || hasNote) {
                         Text(
-                            "${i + 1}  ${verses[i]}",
-                            fontSize = (16 * fontScale).sp,
-                            lineHeight = (24 * fontScale).sp
+                            listOfNotNull(
+                                if (isFav) "★ Favorito" else null,
+                                if (hasNote) "✎ Nota" else null
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall
                         )
-                        if (isFav || hasNote) {
-                            Text(
-                                listOfNotNull(
-                                    if (isFav) "★ Favorito" else null,
-                                    if (hasNote) "✎ Nota" else null
-                                ).joinToString(" · "),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
                     }
                 }
             }
@@ -706,7 +710,7 @@ fun SettingsScreen(userData: UserData, translation: String) {
             )
         }
         item {
-            Text("Biblia SL · versión 1.1 · 73 libros", style = MaterialTheme.typography.bodySmall)
+            Text("Biblia SL · versión 1.2 · 73 libros", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

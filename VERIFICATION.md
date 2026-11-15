@@ -196,3 +196,17 @@ esas fuentes públicas y se comprobó libro por libro.
   Tampoco se pudo probar en un teléfono que la barra del lector ya
   se vea bien ni cambiar la traducción en la app instalada: eso lo
   tiene que comprobar Fran tras instalar la APK nueva.
+
+## Novedades versión 1.2 (lector compacto)
+
+- El encabezado del lector (título, fuente, selector de traducción y
+  botones Anterior / Marcar leído / Siguiente) ahora va DENTRO de la
+  lista de versículos: al bajar el texto se esconde y el capítulo ocupa
+  toda la pantalla; al subir hasta arriba vuelve a aparecer. Antes era
+  fijo arriba y en horizontal dejaba apenas un versículo visible.
+- Botones del lector más chicos: 36 dp de alto, letra 12 sp, menos
+  relleno y menos espacio entre ellos.
+- Versión de la app: 1.2 (versionCode 3). Sin cambios en los textos
+  (VBL 35.283 versículos, RV1909 31.102 versículos) ni en el resto.
+- NO VERIFICADO AQUÍ: compilación en GitHub Actions ni prueba visual
+  en teléfono; eso lo comprueba Fran tras instalar la APK nueva.
