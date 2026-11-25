@@ -7,14 +7,18 @@ plugins {
 // variables de entorno, la compilación debug se firma con ella para poder
 // actualizar sin desinstalar. Sin esas variables (compilación local),
 // se usa la llave debug automática.
-val keystoreFile = System.getenv("KEYSTORE_FILE")
-val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-val keyAlias = System.getenv("KEY_ALIAS")
-val keyPassword = System.getenv("KEY_PASSWORD")
-val hasSigningKey = !keystoreFile.isNullOrBlank()
-    && !keystorePassword.isNullOrBlank()
-    && !keyAlias.isNullOrBlank()
-    && !keyPassword.isNullOrBlank()
+// Los nombres no coinciden con las propiedades de SigningConfig:
+// dentro de create("release") { ... }, "keyAlias = keyAlias" se
+// asignaría a sí mismo y la llave quedaría vacía (eso tumbó la
+// ejecución #10 con 'missing required property "keyPassword"').
+val keystoreFilePath = System.getenv("KEYSTORE_FILE")
+val keystorePass = System.getenv("KEYSTORE_PASSWORD")
+val keyAliasValue = System.getenv("KEY_ALIAS")
+val keyPassValue = System.getenv("KEY_PASSWORD")
+val hasSigningKey = !keystoreFilePath.isNullOrBlank()
+    && !keystorePass.isNullOrBlank()
+    && !keyAliasValue.isNullOrBlank()
+    && !keyPassValue.isNullOrBlank()
 
 android {
     namespace = "com.fran.bibliacatolica"
@@ -31,10 +35,10 @@ android {
     signingConfigs {
         if (hasSigningKey) {
             create("release") {
-                storeFile = file(keystoreFile!!)
-                storePassword = keystorePassword
-                keyAlias = keyAlias
-                keyPassword = keyPassword
+                storeFile = file(keystoreFilePath!!)
+                storePassword = keystorePass
+                keyAlias = keyAliasValue
+                keyPassword = keyPassValue
             }
         }
     }
