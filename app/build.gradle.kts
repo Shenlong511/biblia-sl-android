@@ -3,6 +3,19 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Firma propia (keystore de David): si GitHub Actions pasa la llave por
+// variables de entorno, la compilación debug se firma con ella para poder
+// actualizar sin desinstalar. Sin esas variables (compilación local),
+// se usa la llave debug automática.
+val keystoreFile = System.getenv("KEYSTORE_FILE")
+val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+val keyAlias = System.getenv("KEY_ALIAS")
+val keyPassword = System.getenv("KEY_PASSWORD")
+val hasSigningKey = !keystoreFile.isNullOrBlank()
+    && !keystorePassword.isNullOrBlank()
+    && !keyAlias.isNullOrBlank()
+    && !keyPassword.isNullOrBlank()
+
 android {
     namespace = "com.fran.bibliacatolica"
     compileSdk = 34
@@ -11,11 +24,27 @@ android {
         applicationId = "com.fran.bibliacatolica"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
+    }
+
+    signingConfigs {
+        if (hasSigningKey) {
+            create("release") {
+                storeFile = java.io.File(keystoreFile!!)
+                storePassword = keystorePassword
+                keyAlias = keyAlias
+                keyPassword = keyPassword
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            if (hasSigningKey) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
