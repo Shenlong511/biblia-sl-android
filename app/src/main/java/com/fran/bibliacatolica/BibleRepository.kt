@@ -7,13 +7,16 @@ import java.util.Calendar
 
 /**
  * Lee la Biblia desde assets (JSON locales, sin internet).
- * Dos traducciones offline:
+ * Tres traducciones offline:
  *  - "vbl": Versión Biblia Libre (+ Santa Biblia libre para los
  *    deuterocanónicos y Daniel 13-14), en assets/bible/.
  *  - "rv1909": Reina-Valera 1909 (dominio público), en
  *    assets/bible_rv1909/. Solo tiene 66 libros: los 7
  *    deuterocanónicos y Daniel 13-14 se leen de assets/bible/
  *    (Santa Biblia libre para el mundo), igual que con la VBL.
+ *  - "bes": Biblia en Español Sencillo (dominio público), en
+ *    assets/bible_bes/. También 66 libros, con los deuterocanónicos
+ *    y Daniel 13-14 desde assets/bible/, igual que la RV1909.
  * Cada libro se carga bajo demanda y se guarda en una caché pequeña
  * (máximo 3 libros en memoria) para no cargar toda la Biblia a la vez.
  */
@@ -22,15 +25,19 @@ class BibleRepository(private val context: Context) {
     companion object {
         const val TRANSLATION_VBL = "vbl"
         const val TRANSLATION_RV1909 = "rv1909"
+        const val TRANSLATION_BES = "bes"
 
-        /** Libros que la RV1909 no tiene: siempre se leen de spablm. */
+        /** Libros que la RV1909 y la BES no tienen: siempre se leen de spablm. */
         val DEUTEROCANONICAL_IDS = setOf(
             "TOB", "JDT", "WIS", "SIR", "BAR", "1MA", "2MA"
         )
 
         fun translationLabel(translation: String): String =
-            if (translation == TRANSLATION_RV1909) "Reina-Valera 1909"
-            else "Versión Biblia Libre"
+            when (translation) {
+                TRANSLATION_RV1909 -> "Reina-Valera 1909"
+                TRANSLATION_BES -> "Biblia en Español Sencillo"
+                else -> "Versión Biblia Libre"
+            }
     }
 
     val books: List<BookInfo> by lazy { loadIndex() }
@@ -62,34 +69,40 @@ class BibleRepository(private val context: Context) {
 
     /**
      * Carga un libro en la traducción pedida.
-     *  - RV1909 + libro deuterocanónico: se devuelve el libro de
+     *  - RV1909 o BES + libro deuterocanónico: se devuelve el libro de
      *    assets/bible/ (Santa Biblia libre), con su fuente spablm.
-     *  - RV1909 + Daniel: 12 capítulos RV1909 + Daniel 13-14 de
-     *    assets/bible/ (Santa Biblia libre), igual que la VBL.
-     *  - Cualquier fallo al leer RV1909: se usa la VBL, para que el
+     *  - RV1909 o BES + Daniel: 12 capítulos de la traducción + Daniel
+     *    13-14 de assets/bible/ (Santa Biblia libre), igual que la VBL.
+     *  - Cualquier fallo al leer la traducción: se usa la VBL, para que el
      *    lector nunca quede vacío.
      */
     fun loadBook(id: String, translation: String = TRANSLATION_VBL): Book? {
-        if (translation == TRANSLATION_RV1909) {
+        if (translation == TRANSLATION_RV1909 || translation == TRANSLATION_BES) {
+            val dir = if (translation == TRANSLATION_RV1909) "bible_rv1909" else "bible_bes"
+            val key = "$translation:$id"
             if (id in DEUTEROCANONICAL_IDS) return loadBookFromAssets("bible/$id.json", "vbl:$id")
-            val rv = loadBookFromAssets("bible_rv1909/$id.json", "rv1909:$id")
+            val alt = loadBookFromAssets("$dir/$id.json", key)
                 ?: return loadBookFromAssets("bible/$id.json", "vbl:$id")
             if (id == "DAN") {
                 val spablm = loadBookFromAssets("bible/DAN.json", "vbl:DAN")
                 if (spablm != null && spablm.chapters.size == 14) {
-                    val chapters = rv.chapters + spablm.chapters.subList(12, 14)
-                    val sources = rv.chapterSources + listOf("spablm", "spablm")
-                    val info = rv.info.copy(
+                    val chapters = alt.chapters + spablm.chapters.subList(12, 14)
+                    val sources = alt.chapterSources + listOf("spablm", "spablm")
+                    val label = if (translation == TRANSLATION_RV1909)
+                        "Reina-Valera 1909 (caps. 1–12) + Santa Biblia libre para el mundo (caps. 13–14, Susana y Bel)"
+                    else
+                        "Biblia en Español Sencillo (caps. 1–12) + Santa Biblia libre para el mundo (caps. 13–14, Susana y Bel)"
+                    val info = alt.info.copy(
                         chapters = 14,
-                        source = "rv1909+spablm",
-                        sourceLabel = "Reina-Valera 1909 (caps. 1–12) + Santa Biblia libre para el mundo (caps. 13–14, Susana y Bel)"
+                        source = "$translation+spablm",
+                        sourceLabel = label
                     )
                     val merged = Book(info, chapters, sources)
-                    cache["rv1909:DAN"] = merged
+                    cache[key] = merged
                     return merged
                 }
             }
-            return rv
+            return alt
         }
         return loadBookFromAssets("bible/$id.json", "vbl:$id")
     }

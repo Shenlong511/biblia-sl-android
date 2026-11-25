@@ -2,9 +2,14 @@ package com.fran.bibliacatolica
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,11 +20,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,9 +52,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -65,7 +82,30 @@ class MainActivity : ComponentActivity() {
             val dark by userData.darkFlow.collectAsState(initial = false)
             val fontScale by userData.fontFlow.collectAsState(initial = 1.0f)
             val translation by userData.translationFlow.collectAsState(initial = "vbl")
-            MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+            // Colores neón elegidos en Ajustes (fondo, tarjetas y letras).
+            // "Original" = sin cambio, se queda el color del tema.
+            val bgColorName by userData.bgColorFlow.collectAsState(initial = "Original")
+            val bgTransparency by userData.bgTransparencyFlow.collectAsState(initial = 0f)
+            val cardColorName by userData.cardColorFlow.collectAsState(initial = "Original")
+            val cardTransparency by userData.cardTransparencyFlow.collectAsState(initial = 0f)
+            val textColorName by userData.textColorFlow.collectAsState(initial = "Original")
+            val textTransparency by userData.textTransparencyFlow.collectAsState(initial = 0f)
+            val baseScheme = if (dark) darkColorScheme() else lightColorScheme()
+            val bgColor = NeonColorOptions.firstOrNull { it.first == bgColorName }
+                ?.second?.copy(alpha = 1f - bgTransparency)
+            val cardColor = NeonColorOptions.firstOrNull { it.first == cardColorName }
+                ?.second?.copy(alpha = 1f - cardTransparency)
+            val textColor = NeonColorOptions.firstOrNull { it.first == textColorName }
+                ?.second?.copy(alpha = 1f - textTransparency)
+            val scheme = baseScheme.copy(
+                background = bgColor ?: baseScheme.background,
+                surface = cardColor ?: baseScheme.surface,
+                surfaceVariant = cardColor ?: baseScheme.surfaceVariant,
+                onBackground = textColor ?: baseScheme.onBackground,
+                onSurface = textColor ?: baseScheme.onSurface,
+                onSurfaceVariant = textColor ?: baseScheme.onSurfaceVariant
+            )
+            MaterialTheme(colorScheme = scheme) {
                 BibliaApp(repo, userData, fontScale, translation)
             }
         }
@@ -81,14 +121,24 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
     val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Biblia SL") },
-                actions = {
-                    TextButton(onClick = { nav.navigate("search") }) { Text("Buscar") }
-                    TextButton(onClick = { nav.navigate("favorites") }) { Text("Guardados") }
-                    TextButton(onClick = { nav.navigate("settings") }) { Text("Ajustes") }
-                }
-            )
+            Column {
+                // Título como imagen a todo lo ancho, en una sola línea,
+                // como el título de Shenlong Play Music 2.0.
+                Image(
+                    painter = painterResource(id = R.drawable.title_biblia_sl),
+                    contentDescription = "Biblia SL",
+                    modifier = Modifier.fillMaxWidth().height(96.dp),
+                    contentScale = ContentScale.Crop
+                )
+                TopAppBar(
+                    title = { },
+                    actions = {
+                        TextButton(onClick = { nav.navigate("search") }) { Text("Buscar") }
+                        TextButton(onClick = { nav.navigate("favorites") }) { Text("Guardados") }
+                        TextButton(onClick = { nav.navigate("settings") }) { Text("Ajustes") }
+                    }
+                )
+            }
         }
     ) { pad ->
         NavHost(
@@ -129,7 +179,7 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
             }
             composable("search") { SearchScreen(repo, nav, translation) }
             composable("favorites") { FavoritesScreen(repo, userData, nav, translation) }
-            composable("settings") { SettingsScreen(userData, translation) }
+            composable("settings") { SettingsScreen(userData) }
         }
     }
 }
@@ -139,6 +189,7 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
     val daily = remember(translation) { repo.dailyVerse(translation) }
     val lastRead by userData.lastReadFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
+    var showDonation by remember { mutableStateOf(false) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -202,12 +253,61 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
             ) { Text("Buscar por libro, capítulo o palabra") }
         }
         item {
+            Button(
+                onClick = { showDonation = true },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("DONACIÓN") }
+        }
+        item {
+            Text("Traducción", fontWeight = FontWeight.Bold)
+        }
+        item {
+            if (translation == "vbl") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("✓ Versión Biblia Libre (español moderno)") }
+            } else {
+                OutlinedButton(
+                    onClick = { scope.launch { userData.setTranslation("vbl") } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Versión Biblia Libre (español moderno)") }
+            }
+        }
+        item {
+            if (translation == "rv1909") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("✓ Reina-Valera 1909 (español clásico)") }
+            } else {
+                OutlinedButton(
+                    onClick = { scope.launch { userData.setTranslation("rv1909") } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Reina-Valera 1909 (español clásico)") }
+            }
+        }
+        item {
+            if (translation == "bes") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("✓ Biblia en Español Sencillo") }
+            } else {
+                OutlinedButton(
+                    onClick = { scope.launch { userData.setTranslation("bes") } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Biblia en Español Sencillo") }
+            }
+        }
+        item {
             Text(
-                "Traducciones: Versión Biblia Libre, en español moderno, y " +
-                    "Reina-Valera 1909, en español clásico. Se cambia en Ajustes " +
-                    "o en el lector. Los 7 libros deuterocanónicos se muestran con " +
-                    "la Santa Biblia libre para el mundo, de dominio público, y van " +
-                    "marcados en la lista.",
+                "Traducciones: Versión Biblia Libre, en español moderno, " +
+                    "Reina-Valera 1909, en español clásico, y Biblia en " +
+                    "Español Sencillo, en español muy sencillo. Se cambia aquí " +
+                    "o en el lector. Los 7 libros deuterocanónicos se muestran " +
+                    "con la Santa Biblia libre para el mundo, de dominio público, " +
+                    "y van marcados en la lista.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -216,6 +316,83 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
                 "Versículo del día: ${daily?.label ?: ""}",
                 style = MaterialTheme.typography.bodySmall
             )
+        }
+    }
+    if (showDonation) DonationDialog(onClose = { showDonation = false })
+}
+
+/**
+ * Ventana de donación: abre a pantalla completa (también en horizontal,
+ * donde todo se desliza y ninguna barra queda fija arriba) y muestra la
+ * imagen con las cuentas. Cada cuenta tiene su botón Copiar y hay un
+ * botón para copiar las dos juntas. Al copiar se entrega el número
+ * sin espacios, listo para pegar en la app del banco.
+ */
+@Composable
+fun DonationDialog(onClose: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onClose) { Text("✕ Cerrar") }
+            }
+            Image(
+                painter = painterResource(id = R.drawable.donacion),
+                contentDescription = "Donación a la Cuenta Nu de Débito",
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.FillWidth
+            )
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text("Número de cuenta (Nu de Débito)", fontWeight = FontWeight.Bold)
+                    Text("5195 3773 1452 7450")
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = {
+                        clipboard.setText(AnnotatedString("5195377314527450"))
+                        Toast.makeText(context, "Copiado", Toast.LENGTH_SHORT).show()
+                    }) { Text("Copiar") }
+                }
+            }
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text("CLABE SPEI", fontWeight = FontWeight.Bold)
+                    Text("638180010171917003")
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = {
+                        clipboard.setText(AnnotatedString("638180010171917003"))
+                        Toast.makeText(context, "Copiado", Toast.LENGTH_SHORT).show()
+                    }) { Text("Copiar") }
+                }
+            }
+            Button(
+                onClick = {
+                    clipboard.setText(
+                        AnnotatedString(
+                            "Cuenta Nu: 5195377314527450\nCLABE SPEI: 638180010171917003"
+                        )
+                    )
+                    Toast.makeText(context, "Cuentas copiadas", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Copiar las dos cuentas") }
+            OutlinedButton(
+                onClick = onClose,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Cerrar") }
         }
     }
 }
@@ -283,8 +460,11 @@ fun ChapterListScreen(
         info.id in DEUTEROCANONICAL -> info.sourceLabel
         info.id == "DAN" && translation == "rv1909" ->
             "Caps. 1–12: Reina-Valera 1909 · Caps. 13–14: Santa Biblia libre"
+        info.id == "DAN" && translation == "bes" ->
+            "Caps. 1–12: Biblia en Español Sencillo · Caps. 13–14: Santa Biblia libre"
         info.id == "DAN" -> info.sourceLabel
         translation == "rv1909" -> "Reina-Valera 1909 (dominio público)"
+        translation == "bes" -> "Biblia en Español Sencillo (dominio público)"
         else -> info.sourceLabel
     }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -367,52 +547,50 @@ fun ReaderScreen(
                 when (chapterSource) {
                     "spablm" -> "Santa Biblia libre para el mundo (dominio público)"
                     "rv1909" -> "Reina-Valera 1909 (dominio público)"
+                    "bes" -> "Biblia en Español Sencillo (dominio público)"
                     else -> "Versión Biblia Libre"
                 },
                 style = MaterialTheme.typography.bodySmall
             )
         }
         item {
-            // Selector de traducción: la activa va rellena, la otra en contorno.
-            // Al cambiar, se cierra el panel del versículo para no mostrar
-            // texto de la traducción anterior.
+            // Selector de traducción: la activa va rellena, las demás en
+            // contorno. Cada botón mide lo que ocupa su texto y la fila se
+            // desliza de lado si no caben las tres. Al cambiar, se cierra
+            // el panel del versículo para no mostrar texto de la traducción
+            // anterior.
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (translation == "vbl") {
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f).height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                    ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 12.sp) }
-                    OutlinedButton(
-                        onClick = {
-                            selected = null
-                            scope.launch { userData.setTranslation("rv1909") }
-                        },
-                        modifier = Modifier.weight(1f).height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                    ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 12.sp) }
-                } else {
-                    OutlinedButton(
-                        onClick = {
-                            selected = null
-                            scope.launch { userData.setTranslation("vbl") }
-                        },
-                        modifier = Modifier.weight(1f).height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                    ) { Text("Versión Biblia Libre", maxLines = 1, fontSize = 12.sp) }
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f).height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                    ) { Text("Reina-Valera 1909", maxLines = 1, fontSize = 12.sp) }
+                listOf(
+                    "vbl" to "Versión Biblia Libre",
+                    "rv1909" to "Reina-Valera 1909",
+                    "bes" to "Biblia en Español Sencillo"
+                ).forEach { (id, label) ->
+                    if (translation == id) {
+                        Button(
+                            onClick = { },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) { Text(label, maxLines = 1, fontSize = 12.sp) }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                selected = null
+                                scope.launch { userData.setTranslation(id) }
+                            },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) { Text(label, maxLines = 1, fontSize = 12.sp) }
+                    }
                 }
             }
         }
         item {
-            // Los 3 botones comparten el ancho a partes iguales.
+            // Los 3 botones miden lo que ocupa su texto (sin estirarse a
+            // partes iguales): el del centro puede tomar más ancho si lo
+            // necesita y los de los lados quedan a su medida.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -420,18 +598,18 @@ fun ReaderScreen(
                 OutlinedButton(
                     onClick = { if (chapter > 1) nav.navigate("reader/$bookId/${chapter - 1}") },
                     enabled = chapter > 1,
-                    modifier = Modifier.weight(1f).height(36.dp),
+                    modifier = Modifier.weight(1f, fill = false).height(36.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                 ) { Text("← Anterior", maxLines = 1, fontSize = 12.sp) }
                 OutlinedButton(
                     onClick = { scope.launch { userData.toggleRead(chapterKey) } },
-                    modifier = Modifier.weight(1f).height(36.dp),
+                    modifier = Modifier.weight(1f, fill = false).height(36.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                 ) { Text(if (isRead) "✓ Leído" else "Marcar leído", maxLines = 1, fontSize = 12.sp) }
                 OutlinedButton(
                     onClick = { if (chapter < book.chapters.size) nav.navigate("reader/$bookId/${chapter + 1}") },
                     enabled = chapter < book.chapters.size,
-                    modifier = Modifier.weight(1f).height(36.dp),
+                    modifier = Modifier.weight(1f, fill = false).height(36.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                 ) { Text("Siguiente →", maxLines = 1, fontSize = 12.sp) }
             }
@@ -622,10 +800,94 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
     }
 }
 
+// Solo colores neón, como pidió David (los mismos tonos que los de
+// Shenlong Play Music). "Original" no es un color: es no cambiar nada
+// y quedarse con el color del tema.
+val NeonColorOptions: List<Pair<String, Color>> = listOf(
+    "Azul neón" to Color(0xFF2196F3),
+    "Celeste" to Color(0xFF4FC3F7),
+    "Turquesa" to Color(0xFF00BCD4),
+    "Verde neón" to Color(0xFF4CAF50),
+    "Esmeralda" to Color(0xFF00C853),
+    "Amarillo neón" to Color(0xFFCCFF00),
+    "Amarillo" to Color(0xFFFFC107),
+    "Dorado" to Color(0xFFFFD700),
+    "Naranja neón" to Color(0xFFFF9800),
+    "Rojo neón" to Color(0xFFF44336),
+    "Rosa neón" to Color(0xFFFF2E9A),
+    "Rosa" to Color(0xFFE91E63),
+    "Fucsia" to Color(0xFFE040FB),
+    "Morado neón" to Color(0xFF9C27B0)
+)
+
 @Composable
-fun SettingsScreen(userData: UserData, translation: String) {
+fun ColorPickerRow(
+    selectedName: String,
+    onSelect: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        NeonColorOptions.forEach { (name, color) ->
+            val selected = name == selectedName
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .border(
+                        width = if (selected) 3.dp else 1.dp,
+                        color = if (selected) Color.Black else Color.Gray,
+                        shape = CircleShape
+                    )
+                    .background(color, CircleShape)
+                    .clickable { onSelect(name) }
+            )
+        }
+    }
+}
+
+@Composable
+fun ColorSettingRow(
+    title: String,
+    selectedName: String,
+    transparency: Float,
+    onSave: (String, Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("$title · Elegido: $selectedName")
+        ColorPickerRow(
+            selectedName = selectedName,
+            onSelect = { onSave(it, transparency) }
+        )
+        Slider(
+            value = transparency,
+            onValueChange = { onSave(selectedName, it) },
+            valueRange = 0f..1f
+        )
+        Text(
+            "Transparencia: ${(transparency * 100).toInt()}%",
+            style = MaterialTheme.typography.bodySmall
+        )
+        if (selectedName != "Original") {
+            TextButton(onClick = { onSave("Original", 0f) }) {
+                Text("Quitar color (volver al original)")
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen(userData: UserData) {
     val fontScale by userData.fontFlow.collectAsState(initial = 1.0f)
     val dark by userData.darkFlow.collectAsState(initial = false)
+    val bgColorName by userData.bgColorFlow.collectAsState(initial = "Original")
+    val bgTransparency by userData.bgTransparencyFlow.collectAsState(initial = 0f)
+    val cardColorName by userData.cardColorFlow.collectAsState(initial = "Original")
+    val cardTransparency by userData.cardTransparencyFlow.collectAsState(initial = 0f)
+    val textColorName by userData.textColorFlow.collectAsState(initial = "Original")
+    val textTransparency by userData.textTransparencyFlow.collectAsState(initial = 0f)
     val scope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -633,51 +895,6 @@ fun SettingsScreen(userData: UserData, translation: String) {
     ) {
         item {
             Text("Ajustes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
-        item {
-            Text("Traducción", fontWeight = FontWeight.Bold)
-        }
-        item {
-            Text(
-                "Activa: ${BibleRepository.translationLabel(translation)}. Se aplica " +
-                    "al lector, al versículo del día, a la búsqueda y a los guardados.",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        item {
-            if (translation == "vbl") {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("✓ Versión Biblia Libre (español moderno)") }
-            } else {
-                OutlinedButton(
-                    onClick = { scope.launch { userData.setTranslation("vbl") } },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Versión Biblia Libre (español moderno)") }
-            }
-        }
-        item {
-            if (translation == "rv1909") {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("✓ Reina-Valera 1909 (español clásico)") }
-            } else {
-                OutlinedButton(
-                    onClick = { scope.launch { userData.setTranslation("rv1909") } },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Reina-Valera 1909 (español clásico)") }
-            }
-        }
-        item {
-            Text(
-                "La Reina-Valera 1909 solo tiene 66 libros. Los 7 libros " +
-                    "deuterocanónicos (Tobías, Judit, Sabiduría, Eclesiástico, " +
-                    "Baruc, 1 y 2 Macabeos) y Daniel 13–14 se siguen mostrando " +
-                    "con la Santa Biblia libre para el mundo, y van etiquetados.",
-                style = MaterialTheme.typography.bodySmall
-            )
         }
         item {
             Text("Tamaño de letra")
@@ -695,6 +912,33 @@ fun SettingsScreen(userData: UserData, translation: String) {
             }
         }
         item {
+            Text("Colores neón", fontWeight = FontWeight.Bold)
+        }
+        item {
+            ColorSettingRow(
+                title = "Color de fondo",
+                selectedName = bgColorName,
+                transparency = bgTransparency,
+                onSave = { name, transp -> scope.launch { userData.saveBgColor(name, transp) } }
+            )
+        }
+        item {
+            ColorSettingRow(
+                title = "Color de tarjetas",
+                selectedName = cardColorName,
+                transparency = cardTransparency,
+                onSave = { name, transp -> scope.launch { userData.saveCardColor(name, transp) } }
+            )
+        }
+        item {
+            ColorSettingRow(
+                title = "Color de letras",
+                selectedName = textColorName,
+                transparency = textTransparency,
+                onSave = { name, transp -> scope.launch { userData.saveTextColor(name, transp) } }
+            )
+        }
+        item {
             Text("Fuentes del texto", fontWeight = FontWeight.Bold)
         }
         item {
@@ -703,6 +947,8 @@ fun SettingsScreen(userData: UserData, translation: String) {
                     "66 libros.\n" +
                     "• Reina-Valera 1909 (dominio público, eBible.org): 66 libros, " +
                     "en español clásico con la ortografía original de 1909.\n" +
+                    "• Biblia en Español Sencillo (dominio público, eBible.org): 66 libros, " +
+                    "en español muy sencillo.\n" +
                     "• Santa Biblia libre para el mundo (dominio público, eBible.org): " +
                     "Tobías, Judit, Sabiduría, Eclesiástico, Baruc, 1 y 2 Macabeos, y Daniel 13–14 (Susana y Bel).\n" +
                     "• Esta app no usa internet. Todo el texto está dentro de la app.",
@@ -710,7 +956,7 @@ fun SettingsScreen(userData: UserData, translation: String) {
             )
         }
         item {
-            Text("Biblia SL · versión 1.2 · 73 libros", style = MaterialTheme.typography.bodySmall)
+            Text("Biblia SL · versión 1.3 · 73 libros", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

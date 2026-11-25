@@ -31,7 +31,7 @@ android {
     signingConfigs {
         if (hasSigningKey) {
             create("release") {
-                storeFile = java.io.File(keystoreFile!!)
+                storeFile = file(keystoreFile!!)
                 storePassword = keystorePassword
                 keyAlias = keyAlias
                 keyPassword = keyPassword

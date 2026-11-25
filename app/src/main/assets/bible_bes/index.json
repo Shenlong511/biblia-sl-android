@@ -1,0 +1,532 @@
+{
+ "books": [
+  {
+   "id": "GEN",
+   "name": "Génesis",
+   "testament": "AT",
+   "chapters": 50,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "EXO",
+   "name": "Éxodo",
+   "testament": "AT",
+   "chapters": 40,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "LEV",
+   "name": "Levítico",
+   "testament": "AT",
+   "chapters": 27,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "NUM",
+   "name": "Números",
+   "testament": "AT",
+   "chapters": 36,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "DEU",
+   "name": "Deuteronomio",
+   "testament": "AT",
+   "chapters": 34,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JOS",
+   "name": "Josué",
+   "testament": "AT",
+   "chapters": 24,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JDG",
+   "name": "Jueces",
+   "testament": "AT",
+   "chapters": 21,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "RUT",
+   "name": "Rut",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1SA",
+   "name": "1 Samuel",
+   "testament": "AT",
+   "chapters": 31,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2SA",
+   "name": "2 Samuel",
+   "testament": "AT",
+   "chapters": 24,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1KI",
+   "name": "1 Reyes",
+   "testament": "AT",
+   "chapters": 22,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2KI",
+   "name": "2 Reyes",
+   "testament": "AT",
+   "chapters": 25,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1CH",
+   "name": "1 Crónicas",
+   "testament": "AT",
+   "chapters": 29,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2CH",
+   "name": "2 Crónicas",
+   "testament": "AT",
+   "chapters": 36,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "EZR",
+   "name": "Esdras",
+   "testament": "AT",
+   "chapters": 10,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "NEH",
+   "name": "Nehemías",
+   "testament": "AT",
+   "chapters": 13,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "EST",
+   "name": "Ester",
+   "testament": "AT",
+   "chapters": 10,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JOB",
+   "name": "Job",
+   "testament": "AT",
+   "chapters": 42,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "PSA",
+   "name": "Salmos",
+   "testament": "AT",
+   "chapters": 150,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "PRO",
+   "name": "Proverbios",
+   "testament": "AT",
+   "chapters": 31,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ECC",
+   "name": "Eclesiastés",
+   "testament": "AT",
+   "chapters": 12,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "SNG",
+   "name": "Cantar de los Cantares",
+   "testament": "AT",
+   "chapters": 8,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ISA",
+   "name": "Isaías",
+   "testament": "AT",
+   "chapters": 66,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JER",
+   "name": "Jeremías",
+   "testament": "AT",
+   "chapters": 52,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "LAM",
+   "name": "Lamentaciones",
+   "testament": "AT",
+   "chapters": 5,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "EZK",
+   "name": "Ezequiel",
+   "testament": "AT",
+   "chapters": 48,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "DAN",
+   "name": "Daniel",
+   "testament": "AT",
+   "chapters": 12,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "HOS",
+   "name": "Oseas",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JOL",
+   "name": "Joel",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "AMO",
+   "name": "Amós",
+   "testament": "AT",
+   "chapters": 9,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "OBA",
+   "name": "Abdías",
+   "testament": "AT",
+   "chapters": 1,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JON",
+   "name": "Jonás",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "MIC",
+   "name": "Miqueas",
+   "testament": "AT",
+   "chapters": 7,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "NAM",
+   "name": "Nahúm",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "HAB",
+   "name": "Habacuc",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ZEP",
+   "name": "Sofonías",
+   "testament": "AT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "HAG",
+   "name": "Ageo",
+   "testament": "AT",
+   "chapters": 2,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ZEC",
+   "name": "Zacarías",
+   "testament": "AT",
+   "chapters": 14,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "MAL",
+   "name": "Malaquías",
+   "testament": "AT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "MAT",
+   "name": "Mateo",
+   "testament": "NT",
+   "chapters": 28,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "MRK",
+   "name": "Marcos",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "LUK",
+   "name": "Lucas",
+   "testament": "NT",
+   "chapters": 24,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JHN",
+   "name": "Juan",
+   "testament": "NT",
+   "chapters": 21,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ACT",
+   "name": "Hechos",
+   "testament": "NT",
+   "chapters": 28,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "ROM",
+   "name": "Romanos",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1CO",
+   "name": "1 Corintios",
+   "testament": "NT",
+   "chapters": 16,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2CO",
+   "name": "2 Corintios",
+   "testament": "NT",
+   "chapters": 13,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "GAL",
+   "name": "Gálatas",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "EPH",
+   "name": "Efesios",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "PHP",
+   "name": "Filipenses",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "COL",
+   "name": "Colosenses",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1TH",
+   "name": "1 Tesalonicenses",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2TH",
+   "name": "2 Tesalonicenses",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1TI",
+   "name": "1 Timoteo",
+   "testament": "NT",
+   "chapters": 6,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2TI",
+   "name": "2 Timoteo",
+   "testament": "NT",
+   "chapters": 4,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "TIT",
+   "name": "Tito",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "PHM",
+   "name": "Filemón",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "HEB",
+   "name": "Hebreos",
+   "testament": "NT",
+   "chapters": 13,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JAS",
+   "name": "Santiago",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1PE",
+   "name": "1 Pedro",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2PE",
+   "name": "2 Pedro",
+   "testament": "NT",
+   "chapters": 3,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "1JN",
+   "name": "1 Juan",
+   "testament": "NT",
+   "chapters": 5,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "2JN",
+   "name": "2 Juan",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "3JN",
+   "name": "3 Juan",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "JUD",
+   "name": "Judas",
+   "testament": "NT",
+   "chapters": 1,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  },
+  {
+   "id": "REV",
+   "name": "Apocalipsis",
+   "testament": "NT",
+   "chapters": 22,
+   "source": "bes",
+   "sourceLabel": "Biblia en Español Sencillo (dominio público)"
+  }
+ ]
+}
