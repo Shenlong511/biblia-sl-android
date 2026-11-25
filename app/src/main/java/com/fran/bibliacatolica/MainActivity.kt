@@ -56,7 +56,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -146,6 +145,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Versión de la app: se muestra en Ajustes y al compartir un versículo.
+private const val APP_VERSION = "1.6"
+
 private val DEUTEROCANONICAL = setOf("TOB", "JDT", "WIS", "SIR", "BAR", "1MA", "2MA")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,34 +212,40 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
                             .clickable { nav.popBackStack("home", false) },
                         contentScale = if (isLandscape) ContentScale.Crop else ContentScale.FillWidth
                     )
-                    TopAppBar(
-                        title = { },
-                        actions = {
-                            // Inicio vuelve directo a la pantalla principal,
-                            // sin tener que dar Atrás por todas las pantallas.
-                            // Los demás botones no se apilan dos veces.
-                            TextButton(
-                                onClick = { nav.popBackStack("home", false) },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) { Text("Inicio", fontSize = 12.sp) }
-                            TextButton(
-                                onClick = { showDonation = true },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) { Text("Donación", fontSize = 12.sp) }
-                            TextButton(
-                                onClick = { nav.navigate("search") { launchSingleTop = true } },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) { Text("Buscar", fontSize = 12.sp) }
-                            TextButton(
-                                onClick = { nav.navigate("favorites") { launchSingleTop = true } },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) { Text("Guardados", fontSize = 12.sp) }
-                            TextButton(
-                                onClick = { nav.navigate("settings") { launchSingleTop = true } },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) { Text("Ajustes", fontSize = 12.sp) }
-                        }
-                    )
+                    // Barra de opciones delgada, con el texto más grande y
+                    // deslizable de lado (como las filas de colores), para
+                    // que nunca se corte ningún botón por el tamaño.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                            .horizontalScroll(rememberScrollState())
+                            .background(MaterialTheme.colorScheme.surface),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // Inicio vuelve directo a la pantalla principal,
+                        // sin tener que dar Atrás por todas las pantallas.
+                        // Los demás botones no se apilan dos veces.
+                        TextButton(
+                            onClick = { nav.popBackStack("home", false) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Inicio", fontSize = 14.sp) }
+                        TextButton(
+                            onClick = { showDonation = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Donación", fontSize = 14.sp) }
+                        TextButton(
+                            onClick = { nav.navigate("search") { launchSingleTop = true } },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Buscar", fontSize = 14.sp) }
+                        TextButton(
+                            onClick = { nav.navigate("favorites") { launchSingleTop = true } },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Guardados", fontSize = 14.sp) }
+                        TextButton(
+                            onClick = { nav.navigate("settings") { launchSingleTop = true } },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Ajustes", fontSize = 14.sp) }
+                    }
                 }
             }
         }
@@ -794,7 +802,9 @@ fun ReaderScreen(
             Card(
                 modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
                     .fillMaxWidth().padding(16.dp).heightIn(max = 480.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                // Fondo negro fijo: con el color de fondo elegido se veía
+                // transparente y el texto de la lista se perdía detrás.
+                colors = CardDefaults.cardColors(containerColor = Color.Black),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
@@ -825,11 +835,21 @@ fun ReaderScreen(
                         TextButton(onClick = {
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "${sel.label}\n${sel.text}\n— Biblia SL")
+                                putExtra(Intent.EXTRA_TEXT, "${sel.label}\n${sel.text}\n— Biblia SL $APP_VERSION")
                             }
                             activity?.startActivity(Intent.createChooser(send, "Compartir versículo"))
                         }) { Text("Compartir") }
                         TextButton(onClick = { selected = null }) { Text("Cerrar") }
+                    }
+                    // Las notas se podían agregar pero no quitar: si este
+                    // versículo ya tiene nota, se puede borrar aquí.
+                    if (sel.key in notes) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = {
+                                scope.launch { userData.saveNote(sel.key, "") }
+                                noteDraft = ""
+                            }) { Text("Borrar nota") }
+                        }
                     }
                 }
             }
@@ -901,6 +921,7 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: Str
 fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String, isAtTop: MutableState<Boolean>) {
     val favorites by userData.favoritesFlow.collectAsState(initial = emptySet())
     val notes by userData.notesFlow.collectAsState(initial = emptyMap())
+    val scope = rememberCoroutineScope()
     val favRefs = remember(favorites, translation) {
         favorites.mapNotNull { key ->
             val parts = key.split(":")
@@ -954,6 +975,9 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
                             Text(ref.label, fontWeight = FontWeight.Bold)
                             Text(ref.text)
                             Text("✎ $note", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = {
+                                scope.launch { userData.saveNote(key, "") }
+                            }) { Text("Borrar nota") }
                         }
                     }
                 }
@@ -961,9 +985,10 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
         }
 }
 
-// Solo colores neón, como pidió David (los mismos tonos que los de
-// Shenlong Play Music). "Original" no es un color: es no cambiar nada
-// y quedarse con el color del tema.
+// Colores para fondo, tarjetas y letras: los 14 neón de antes más 16
+// clásicos (rojo, negro, azul y otros, aunque no sean neón), 30 en total.
+// "Original" no es un color: es no cambiar nada y quedarse con el color
+// del tema.
 val NeonColorOptions: List<Pair<String, Color>> = listOf(
     "Azul neón" to Color(0xFF2196F3),
     "Celeste" to Color(0xFF4FC3F7),
@@ -978,7 +1003,23 @@ val NeonColorOptions: List<Pair<String, Color>> = listOf(
     "Rosa neón" to Color(0xFFFF2E9A),
     "Rosa" to Color(0xFFE91E63),
     "Fucsia" to Color(0xFFE040FB),
-    "Morado neón" to Color(0xFF9C27B0)
+    "Morado neón" to Color(0xFF9C27B0),
+    "Rojo" to Color(0xFFD32F2F),
+    "Negro" to Color(0xFF000000),
+    "Azul" to Color(0xFF1565C0),
+    "Azul marino" to Color(0xFF0D47A1),
+    "Índigo" to Color(0xFF3F51B5),
+    "Violeta" to Color(0xFF7C4DFF),
+    "Morado" to Color(0xFF6A1B9A),
+    "Blanco" to Color(0xFFFFFFFF),
+    "Gris" to Color(0xFF9E9E9E),
+    "Gris oscuro" to Color(0xFF424242),
+    "Café" to Color(0xFF795548),
+    "Verde" to Color(0xFF2E7D32),
+    "Lima" to Color(0xFFCDDC39),
+    "Naranja" to Color(0xFFEF6C00),
+    "Coral" to Color(0xFFFF7043),
+    "Rosa claro" to Color(0xFFF8BBD0)
 )
 
 @Composable
@@ -1131,7 +1172,7 @@ fun SettingsScreen(userData: UserData, isAtTop: MutableState<Boolean>) {
             )
         }
         item {
-            Text("Biblia SL · versión 1.5 · 73 libros", style = MaterialTheme.typography.bodySmall)
+            Text("Biblia SL · versión $APP_VERSION · 73 libros", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
