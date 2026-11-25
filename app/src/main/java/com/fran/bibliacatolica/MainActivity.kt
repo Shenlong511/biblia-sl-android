@@ -2,6 +2,7 @@ package com.fran.bibliacatolica
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -71,6 +74,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -118,7 +122,10 @@ class MainActivity : ComponentActivity() {
             val textColor = NeonColorOptions.firstOrNull { it.first == textColorName }
                 ?.second?.copy(alpha = 1f - textTransparency)
             val scheme = baseScheme.copy(
-                background = bgColor ?: baseScheme.background,
+                // Con el modo oscuro activo el color de fondo se desactiva:
+                // manda el fondo oscuro del tema, para que el modo oscuro
+                // se vea oscuro. Al apagarlo, vuelve el color elegido.
+                background = if (dark) baseScheme.background else (bgColor ?: baseScheme.background),
                 surface = cardColor ?: baseScheme.surface,
                 surfaceVariant = cardColor ?: baseScheme.surfaceVariant,
                 onBackground = textColor ?: baseScheme.onBackground,
@@ -178,6 +185,12 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
             Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
         }
     }
+    // En horizontal la pantalla es bajita: si el título llevara su altura
+    // completa (proporción de la imagen a todo lo ancho) se comería casi
+    // toda la pantalla y el contenido quedaba sin espacio ni deslizamiento,
+    // solo funcionaban los botones de la barra. En horizontal el título es
+    // solo una tira fina; en vertical sigue completo como antes.
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     Scaffold(
         topBar = {
             AnimatedVisibility(
@@ -188,19 +201,41 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
                 Column {
                     // Título como imagen a todo lo ancho, completa y sin
                     // recortar: la altura sale de la proporción de la imagen.
+                    // Tocar el título vuelve a Inicio.
                     Image(
                         painter = painterResource(id = R.drawable.title_biblia_sl),
                         contentDescription = "Biblia SL",
-                        modifier = Modifier.fillMaxWidth().aspectRatio(2293f / 946f),
-                        contentScale = ContentScale.FillWidth
+                        modifier = Modifier.fillMaxWidth()
+                            .then(if (isLandscape) Modifier.height(40.dp) else Modifier.aspectRatio(2293f / 946f))
+                            .clickable { nav.popBackStack("home", false) },
+                        contentScale = if (isLandscape) ContentScale.Crop else ContentScale.FillWidth
                     )
                     TopAppBar(
                         title = { },
                         actions = {
-                            TextButton(onClick = { showDonation = true }) { Text("Donación") }
-                            TextButton(onClick = { nav.navigate("search") }) { Text("Buscar") }
-                            TextButton(onClick = { nav.navigate("favorites") }) { Text("Guardados") }
-                            TextButton(onClick = { nav.navigate("settings") }) { Text("Ajustes") }
+                            // Inicio vuelve directo a la pantalla principal,
+                            // sin tener que dar Atrás por todas las pantallas.
+                            // Los demás botones no se apilan dos veces.
+                            TextButton(
+                                onClick = { nav.popBackStack("home", false) },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                            ) { Text("Inicio", fontSize = 12.sp) }
+                            TextButton(
+                                onClick = { showDonation = true },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                            ) { Text("Donación", fontSize = 12.sp) }
+                            TextButton(
+                                onClick = { nav.navigate("search") { launchSingleTop = true } },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                            ) { Text("Buscar", fontSize = 12.sp) }
+                            TextButton(
+                                onClick = { nav.navigate("favorites") { launchSingleTop = true } },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                            ) { Text("Guardados", fontSize = 12.sp) }
+                            TextButton(
+                                onClick = { nav.navigate("settings") { launchSingleTop = true } },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                            ) { Text("Ajustes", fontSize = 12.sp) }
                         }
                     )
                 }
@@ -744,43 +779,58 @@ fun ReaderScreen(
         }
     }
     // Panel del versículo seleccionado: favorito, nota y compartir.
+    // Es una ventana de verdad: fondo oscuro detrás (tocarlo la cierra),
+    // fondo propio distinto al de las tarjetas para que no se confunda con
+    // la lista, altura limitada con deslizamiento y los 4 botones en dos
+    // filas para que ninguno se corte fuera de la pantalla.
     val sel = selected
     if (sel != null) {
         val activity = androidx.compose.ui.platform.LocalContext.current as? ComponentActivity
-        Card(
-            modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
-                .fillMaxWidth().padding(16.dp)
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(sel.label, fontWeight = FontWeight.Bold)
-                Text(sel.text)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = noteDraft,
-                    onValueChange = { noteDraft = it },
-                    label = { Text("Mi nota (se guarda en el teléfono)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {
-                        scope.launch {
-                            userData.toggleFavorite(sel.key)
+        Box(Modifier.fillMaxSize()) {
+            Box(
+                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f))
+                    .clickable { selected = null }
+            )
+            Card(
+                modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                    .fillMaxWidth().padding(16.dp).heightIn(max = 480.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+                    Text(sel.label, fontWeight = FontWeight.Bold)
+                    Text(sel.text)
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = noteDraft,
+                        onValueChange = { noteDraft = it },
+                        label = { Text("Mi nota (se guarda en el teléfono)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = {
+                            scope.launch {
+                                userData.toggleFavorite(sel.key)
+                            }
+                        }) {
+                            Text(if (sel.key in favorites) "Quitar favorito" else "★ Favorito")
                         }
-                    }) {
-                        Text(if (sel.key in favorites) "Quitar favorito" else "★ Favorito")
+                        Button(onClick = {
+                            scope.launch { userData.saveNote(sel.key, noteDraft) }
+                            selected = null
+                        }) { Text("Guardar nota") }
                     }
-                    Button(onClick = {
-                        scope.launch { userData.saveNote(sel.key, noteDraft) }
-                        selected = null
-                    }) { Text("Guardar nota") }
-                    TextButton(onClick = {
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "${sel.label}\n${sel.text}\n— Biblia SL")
-                        }
-                        activity?.startActivity(Intent.createChooser(send, "Compartir versículo"))
-                    }) { Text("Compartir") }
-                    TextButton(onClick = { selected = null }) { Text("Cerrar") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "${sel.label}\n${sel.text}\n— Biblia SL")
+                            }
+                            activity?.startActivity(Intent.createChooser(send, "Compartir versículo"))
+                        }) { Text("Compartir") }
+                        TextButton(onClick = { selected = null }) { Text("Cerrar") }
+                    }
                 }
             }
         }
@@ -1039,6 +1089,14 @@ fun SettingsScreen(userData: UserData, isAtTop: MutableState<Boolean>) {
                 onSave = { name, transp -> scope.launch { userData.saveBgColor(name, transp) } }
             )
         }
+        if (dark) {
+            item {
+                Text(
+                    "Con el modo oscuro activo el color de fondo queda desactivado.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
         item {
             ColorSettingRow(
                 title = "Color de tarjetas",
@@ -1073,7 +1131,7 @@ fun SettingsScreen(userData: UserData, isAtTop: MutableState<Boolean>) {
             )
         }
         item {
-            Text("Biblia SL · versión 1.4 · 73 libros", style = MaterialTheme.typography.bodySmall)
+            Text("Biblia SL · versión 1.5 · 73 libros", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
