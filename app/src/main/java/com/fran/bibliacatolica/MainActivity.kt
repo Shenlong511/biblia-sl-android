@@ -1,10 +1,17 @@
 package com.fran.bibliacatolica
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,16 +23,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -45,12 +57,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -63,10 +78,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +122,14 @@ class MainActivity : ComponentActivity() {
                 surfaceVariant = cardColor ?: baseScheme.surfaceVariant,
                 onBackground = textColor ?: baseScheme.onBackground,
                 onSurface = textColor ?: baseScheme.onSurface,
-                onSurfaceVariant = textColor ?: baseScheme.onSurfaceVariant
+                onSurfaceVariant = textColor ?: baseScheme.onSurfaceVariant,
+                // El morado de los botones y del texto de la barra (Buscar,
+                // Guardados, Ajustes, Donación) es el color primario: sigue
+                // al color de letras elegido, para que también cambie.
+                primary = textColor ?: baseScheme.primary,
+                onPrimary = textColor?.let {
+                    if (it.luminance() > 0.5f) Color.Black else Color.White
+                } ?: baseScheme.onPrimary
             )
             MaterialTheme(colorScheme = scheme) {
                 BibliaApp(repo, userData, fontScale, translation)
@@ -119,25 +145,64 @@ private val DEUTEROCANONICAL = setOf("TOB", "JDT", "WIS", "SIR", "BAR", "1MA", "
 fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, translation: String) {
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var showDonation by remember { mutableStateOf(false) }
+    // ¿La pantalla está arriba del todo? Cada pantalla lo actualiza al
+    // deslizar. Al bajar, se esconden la barra superior (título y
+    // opciones) y la barra de estado (batería, señal); al volver al
+    // principio, vuelven a salir. Vale en vertical y en horizontal.
+    val isAtTop = remember { mutableStateOf(true) }
+    LaunchedEffect(isAtTop.value) {
+        val activity = context as? Activity ?: return@LaunchedEffect
+        val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (isAtTop.value) {
+            controller.show(WindowInsetsCompat.Type.statusBars())
+        } else {
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+        }
+    }
+    // Salir de la app con dos toques seguidos en Atrás, solo en la
+    // pantalla principal. En las demás pantallas, Atrás vuelve atrás.
+    val backStackEntry by nav.currentBackStackEntryAsState()
+    val isHome = backStackEntry?.destination?.route == "home"
+    var lastBackPress by remember { mutableStateOf(0L) }
+    BackHandler(enabled = isHome) {
+        val now = System.currentTimeMillis()
+        if (now - lastBackPress < 2000) {
+            (context as? Activity)?.finish()
+        } else {
+            lastBackPress = now
+            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+        }
+    }
     Scaffold(
         topBar = {
-            Column {
-                // Título como imagen a todo lo ancho, en una sola línea,
-                // como el título de Shenlong Play Music 2.0.
-                Image(
-                    painter = painterResource(id = R.drawable.title_biblia_sl),
-                    contentDescription = "Biblia SL",
-                    modifier = Modifier.fillMaxWidth().height(96.dp),
-                    contentScale = ContentScale.Crop
-                )
-                TopAppBar(
-                    title = { },
-                    actions = {
-                        TextButton(onClick = { nav.navigate("search") }) { Text("Buscar") }
-                        TextButton(onClick = { nav.navigate("favorites") }) { Text("Guardados") }
-                        TextButton(onClick = { nav.navigate("settings") }) { Text("Ajustes") }
-                    }
-                )
+            AnimatedVisibility(
+                visible = isAtTop.value,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+            ) {
+                Column {
+                    // Título como imagen a todo lo ancho, completa y sin
+                    // recortar: la altura sale de la proporción de la imagen.
+                    Image(
+                        painter = painterResource(id = R.drawable.title_biblia_sl),
+                        contentDescription = "Biblia SL",
+                        modifier = Modifier.fillMaxWidth().aspectRatio(2293f / 946f),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    TopAppBar(
+                        title = { },
+                        actions = {
+                            TextButton(onClick = { showDonation = true }) { Text("Donación") }
+                            TextButton(onClick = { nav.navigate("search") }) { Text("Buscar") }
+                            TextButton(onClick = { nav.navigate("favorites") }) { Text("Guardados") }
+                            TextButton(onClick = { nav.navigate("settings") }) { Text("Ajustes") }
+                        }
+                    )
+                }
             }
         }
     ) { pad ->
@@ -146,18 +211,18 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
             startDestination = "home",
             modifier = Modifier.padding(pad)
         ) {
-            composable("home") { HomeScreen(repo, userData, nav, translation) }
+            composable("home") { HomeScreen(repo, userData, nav, translation, isAtTop) }
             composable(
                 "books/{testament}",
                 arguments = listOf(navArgument("testament") { type = NavType.StringType })
             ) { back ->
-                BookListScreen(repo, back.arguments?.getString("testament") ?: "AT", nav)
+                BookListScreen(repo, back.arguments?.getString("testament") ?: "AT", nav, isAtTop)
             }
             composable(
                 "chapters/{bookId}",
                 arguments = listOf(navArgument("bookId") { type = NavType.StringType })
             ) { back ->
-                ChapterListScreen(repo, userData, back.arguments?.getString("bookId") ?: "GEN", nav, translation)
+                ChapterListScreen(repo, userData, back.arguments?.getString("bookId") ?: "GEN", nav, translation, isAtTop)
             }
             composable(
                 "reader/{bookId}/{chapter}",
@@ -174,23 +239,30 @@ fun BibliaApp(repo: BibleRepository, userData: UserData, fontScale: Float, trans
                     nav = nav,
                     fontScale = fontScale,
                     scope = scope,
-                    translation = translation
+                    translation = translation,
+                    isAtTop = isAtTop
                 )
             }
-            composable("search") { SearchScreen(repo, nav, translation) }
-            composable("favorites") { FavoritesScreen(repo, userData, nav, translation) }
-            composable("settings") { SettingsScreen(userData) }
+            composable("search") { SearchScreen(repo, nav, translation, isAtTop) }
+            composable("favorites") { FavoritesScreen(repo, userData, nav, translation, isAtTop) }
+            composable("settings") { SettingsScreen(userData, isAtTop) }
         }
     }
+    if (showDonation) DonationDialog(onClose = { showDonation = false })
 }
 
 @Composable
-fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String) {
+fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String, isAtTop: MutableState<Boolean>) {
     val daily = remember(translation) { repo.dailyVerse(translation) }
     val lastRead by userData.lastReadFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
-    var showDonation by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -245,18 +317,6 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
                 onClick = { nav.navigate("books/NT") },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Nuevo Testamento · 27 libros") }
-        }
-        item {
-            OutlinedButton(
-                onClick = { nav.navigate("search") },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Buscar por libro, capítulo o palabra") }
-        }
-        item {
-            Button(
-                onClick = { showDonation = true },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("DONACIÓN") }
         }
         item {
             Text("Traducción", fontWeight = FontWeight.Bold)
@@ -318,7 +378,6 @@ fun HomeScreen(repo: BibleRepository, userData: UserData, nav: NavHostController
             )
         }
     }
-    if (showDonation) DonationDialog(onClose = { showDonation = false })
 }
 
 /**
@@ -398,18 +457,30 @@ fun DonationDialog(onClose: () -> Unit) {
 }
 
 @Composable
-fun BookListScreen(repo: BibleRepository, testament: String, nav: NavHostController) {
+fun BookListScreen(repo: BibleRepository, testament: String, nav: NavHostController, isAtTop: MutableState<Boolean>) {
     val title = if (testament == "AT") "Antiguo Testamento" else "Nuevo Testamento"
     val books = repo.books.filter { it.testament == testament }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("${books.size} libros · sin internet", style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(12.dp))
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(books) { book ->
+    // El título va dentro de la lista para que también se esconda al bajar.
+    val listState = remember(testament) { LazyListState() }
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        item {
+            Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        }
+        item {
+            Text("${books.size} libros · sin internet", style = MaterialTheme.typography.bodySmall)
+        }
+        item {
+            Spacer(Modifier.height(8.dp))
+        }
+        items(books) { book ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
                         nav.navigate("chapters/${book.id}")
@@ -436,16 +507,15 @@ fun BookListScreen(repo: BibleRepository, testament: String, nav: NavHostControl
                 }
             }
         }
-    }
 }
-
 @Composable
 fun ChapterListScreen(
     repo: BibleRepository,
     userData: UserData,
     bookId: String,
     nav: NavHostController,
-    translation: String
+    translation: String,
+    isAtTop: MutableState<Boolean>
 ) {
     val info = repo.bookById(bookId)
     val read by userData.readFlow.collectAsState(initial = emptySet())
@@ -467,34 +537,47 @@ fun ChapterListScreen(
         translation == "bes" -> "Biblia en Español Sencillo (dominio público)"
         else -> info.sourceLabel
     }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(info.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(sourceText, style = MaterialTheme.typography.bodySmall)
-        if (info.id in DEUTEROCANONICAL) {
-            Text(
-                "Libro deuterocanónico. Texto: Santa Biblia libre para el mundo, de dominio público.",
-                style = MaterialTheme.typography.bodySmall
-            )
+    // El título va dentro de la cuadrícula para que también se esconda al bajar.
+    val gridState = remember(bookId) { LazyGridState() }
+    LaunchedEffect(gridState) {
+        snapshotFlow { gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(5),
+        state = gridState,
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(info.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(12.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items((1..info.chapters).toList()) { ch ->
-                val key = "$bookId:$ch"
-                val isRead = key in read
-                Card(
-                    modifier = Modifier.clickable {
-                        scope.launch { userData.setLastRead(key) }
-                        nav.navigate("reader/$bookId/$ch")
-                    }
-                ) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(if (isRead) "✓ $ch" else "$ch", fontWeight = FontWeight.Bold)
-                    }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(sourceText, style = MaterialTheme.typography.bodySmall)
+        }
+        if (info.id in DEUTEROCANONICAL) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    "Libro deuterocanónico. Texto: Santa Biblia libre para el mundo, de dominio público.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Spacer(Modifier.height(4.dp))
+        }
+        items((1..info.chapters).toList()) { ch ->
+            val key = "$bookId:$ch"
+            val isRead = key in read
+            Card(
+                modifier = Modifier.clickable {
+                    scope.launch { userData.setLastRead(key) }
+                    nav.navigate("reader/$bookId/$ch")
+                }
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(if (isRead) "✓ $ch" else "$ch", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -510,7 +593,8 @@ fun ReaderScreen(
     nav: NavHostController,
     fontScale: Float,
     scope: kotlinx.coroutines.CoroutineScope,
-    translation: String
+    translation: String,
+    isAtTop: MutableState<Boolean>
 ) {
     val book = remember(bookId, translation) { repo.loadBook(bookId, translation) }
     val favorites by userData.favoritesFlow.collectAsState(initial = emptySet())
@@ -526,12 +610,19 @@ fun ReaderScreen(
     val chapterKey = "$bookId:$chapter"
     val isRead = chapterKey in read
     val chapterSource = book.chapterSources.getOrNull(chapter - 1) ?: book.info.source
+    // El estado se recrea al cambiar de capítulo para empezar arriba.
+    val listState = remember(bookId, chapter) { LazyListState() }
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
     Box(Modifier.fillMaxSize()) {
     // El encabezado (titulo, selector y botones) va DENTRO de la lista:
     // al bajar el texto se esconde y el capitulo ocupa toda la pantalla;
     // al subir hasta arriba vuelve a aparecer. En horizontal era lo que
     // dejaba apenas un versiculo visible.
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -697,11 +788,18 @@ fun ReaderScreen(
 }
 
 @Composable
-fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: String) {
+fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: String, isAtTop: MutableState<Boolean>) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<VerseRef>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // Los controles de búsqueda quedan fijos; solo la lista de resultados
+    // avisa al bajar para esconder la barra superior y la de estado.
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Buscar", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
@@ -728,6 +826,7 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: Str
         Spacer(Modifier.height(8.dp))
         if (results.size >= 100) Text("Mostrando los primeros 100 resultados.")
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -748,7 +847,7 @@ fun SearchScreen(repo: BibleRepository, nav: NavHostController, translation: Str
 }
 
 @Composable
-fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String) {
+fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostController, translation: String, isAtTop: MutableState<Boolean>) {
     val favorites by userData.favoritesFlow.collectAsState(initial = emptySet())
     val notes by userData.notesFlow.collectAsState(initial = emptyMap())
     val favRefs = remember(favorites, translation) {
@@ -758,15 +857,27 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
             else repo.getVerse(parts[0], parts[1].toIntOrNull() ?: return@mapNotNull null, parts[2].toIntOrNull() ?: return@mapNotNull null, translation)
         }
     }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Guardados", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Favoritos (${favRefs.size}) · Notas (${notes.size}) · ${BibleRepository.translationLabel(translation)} · todo guardado en tu teléfono.")
-        Spacer(Modifier.height(12.dp))
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(favRefs) { ref ->
+    // El título va dentro de la lista para que también se esconda al bajar.
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text("Guardados", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        }
+        item {
+            Text("Favoritos (${favRefs.size}) · Notas (${notes.size}) · ${BibleRepository.translationLabel(translation)} · todo guardado en tu teléfono.")
+        }
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
+        items(favRefs) { ref ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
                         nav.navigate("reader/${ref.bookId}/${ref.chapter}")
@@ -797,7 +908,6 @@ fun FavoritesScreen(repo: BibleRepository, userData: UserData, nav: NavHostContr
                 }
             }
         }
-    }
 }
 
 // Solo colores neón, como pidió David (los mismos tonos que los de
@@ -879,7 +989,7 @@ fun ColorSettingRow(
 }
 
 @Composable
-fun SettingsScreen(userData: UserData) {
+fun SettingsScreen(userData: UserData, isAtTop: MutableState<Boolean>) {
     val fontScale by userData.fontFlow.collectAsState(initial = 1.0f)
     val dark by userData.darkFlow.collectAsState(initial = false)
     val bgColorName by userData.bgColorFlow.collectAsState(initial = "Original")
@@ -889,7 +999,13 @@ fun SettingsScreen(userData: UserData) {
     val textColorName by userData.textColorFlow.collectAsState(initial = "Original")
     val textTransparency by userData.textTransparencyFlow.collectAsState(initial = 0f)
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .collect { atTop -> isAtTop.value = atTop }
+    }
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -956,7 +1072,7 @@ fun SettingsScreen(userData: UserData) {
             )
         }
         item {
-            Text("Biblia SL · versión 1.3 · 73 libros", style = MaterialTheme.typography.bodySmall)
+            Text("Biblia SL · versión 1.4 · 73 libros", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
